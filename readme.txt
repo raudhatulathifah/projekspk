@@ -1,73 +1,77 @@
-Tentu, ini draf **README.md** yang santai tapi tetap profesional dan jelas. Cocok banget buat dikirim ke temen kamu supaya dia nggak bingung cara instalasinya.
+# Human Capital Analytics Dashboard
+Aplikasi ini merupakan sistem pendukung keputusan (Decision Support System/DSS) untuk melakukan pemeringkatan performa karyawan menggunakan metode AHP (Analytic Hierarchy Process) dan SAW (Simple Additive Weighting).
 
-Kamu bisa copas teks di bawah ini dan simpan dengan nama `README.md` di folder proyekmu.
+Sistem akan memproses data karyawan dari file CSV, menghitung bobot kriteria menggunakan AHP, kemudian melakukan perangkingan menggunakan metode SAW. Hasil akhir ditampilkan dalam bentuk dashboard dan visualisasi grafik.
 
----
+## Fitur Utama
+* Upload dataset karyawan format `.csv`
+* Perhitungan bobot kriteria menggunakan metode AHP
+* Proses normalisasi dan perangkingan menggunakan metode SAW
+* Menampilkan ranking karyawan terbaik
+* Visualisasi data dalam bentuk chart
+* Tampilan dashboard berbasis web
 
-# 📊 Human Capital Analytics Dashboard
+## Teknologi yang Digunakan
+* Python
+* Flask
+* Pandas
+* NumPy
+* HTML, CSS, Bootstrap
+* Chart.js
 
-Halo! Ini adalah aplikasi dashboard **Decision Support System (DSS)** untuk melakukan pemeringkatan performa karyawan secara otomatis. Sistem ini menggunakan metodologi komputasi **AHP (Analytic Hierarchy Process)** dan **SAW (Simple Additive Weighting)** dengan tampilan UI yang modern dan profesional.
+## Cara Menjalankan Program
 
-## 🚀 Cara Menjalankan Aplikasi
+### 1. Install Python
+Pastikan Python versi 3.8 atau lebih baru sudah terpasang di perangkat.
 
-Ikuti langkah-langkah di bawah ini supaya aplikasinya jalan lancar di laptop kamu:
+### 2. Install Dependency
+Buka terminal atau CMD pada folder project, lalu jalankan:
+pip install flask pandas numpy
 
-### 1. Persiapan Awal
-
-Pastikan kamu sudah install **Python** (disarankan versi 3.8 ke atas).
-
-### 2. Install Library yang Dibutuhkan
-
-Buka terminal atau CMD di folder proyek ini, lalu jalankan perintah berikut untuk menginstal semua "bahan baku" yang diperlukan:
-
-```bash
-pip install flask pandas numpy (jalankan ini diterminal vscode)
-
-```
-
-### 3. Jalankan Aplikasi
-
-Setelah instalasi selesai, jalankan file utama aplikasinya:
-
-```bash
+### 3. Jalankan Program
+Jalankan file utama aplikasi dengan perintah:
 python app.py
 
-```
-
-### 4. Buka di Browser
-
-Kalau di terminal sudah muncul tulisan `Running on http://127.0.0.1:5000`, buka browser kamu (Chrome/Edge) dan ketik alamat berikut:
-
-```
+### 4. Buka Aplikasi
+Jika program berhasil dijalankan, akan muncul alamat berikut pada terminal:
 http://127.0.0.1:5000
+Buka alamat tersebut melalui browser.
 
-```
+## Cara Penggunaan
+1. Siapkan file dataset karyawan dengan format `.csv`
+2. Klik tombol “Pilih File”
+3. Upload dataset
+4. Klik tombol “Proses”
+5. Sistem akan menampilkan hasil ranking karyawan berdasarkan perhitungan AHP dan SAW
 
----
+## Struktur Perhitungan Sistem
 
-## 📂 Cara Penggunaan
+### AHP (Analytic Hierarchy Process)
+Metode AHP digunakan untuk menentukan bobot setiap kriteria berdasarkan matriks perbandingan berpasangan. Sistem juga melakukan pengecekan konsistensi menggunakan Consistency Ratio (CR).
 
-1. Siapkan file data karyawan dalam format **.csv**.
-2. Klik tombol **"Pilih File"** pada dashboard.
-3. Klik **"Proses"**.
-4. Boom! Sistem bakal langsung menghitung dan nampilin:
-* **Populasi Sampel**: Jumlah total karyawan yang dianalisis.
-* **Pencapaian Tertinggi**: Siapa yang jadi juara (lengkap dengan icon mahkota 👑).
-* **Visualisasi Bar Chart**: Perbandingan skor antar karyawan.
-* **Urutan Prioritas**: Daftar peringkat dari yang terbaik.
+### SAW (Simple Additive Weighting)
+Metode SAW digunakan untuk menghitung nilai preferensi akhir setiap karyawan melalui proses:
+* Pembentukan matriks keputusan
+* Normalisasi data
+* Perkalian nilai normalisasi dengan bobot AHP
+* Penjumlahan seluruh nilai preferensi
+* Proses perangkingan
 
+Rumus SAW:
+Vi = Σ (wj × rij)
 
+Keterangan:
+* Vi = nilai preferensi alternatif
+* wj = bobot kriteria
+* rij = nilai normalisasi alternatif
 
----
+## Dataset
+Dataset yang digunakan berupa data karyawan yang memiliki beberapa kriteria penilaian, seperti:
+* PerformanceScore
+* EngagementSurvey
+* EmpSatisfaction
+* Absences
+* SpecialProjectsCount
 
-## 🛠️ Tech Stack
-
-* **Backend**: Flask (Python)
-* **Data Processing**: Pandas & Numpy
-* **Frontend**: HTML5, CSS3 (Custom Glassmorphism), Bootstrap 5
-* **Charts**: Chart.js
-* **Icons**: FontAwesome 6
-
----
-
-**Note:** Kalau ada error atau bingung, tanya aja ya! Enjoy coding! ☕✨
+## Catatan
+Pastikan file dataset sesuai format dan tidak terdapat data kosong pada kolom utama yang digunakan dalam proses perhitungan.
