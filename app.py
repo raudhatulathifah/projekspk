@@ -1,9 +1,13 @@
 import os
 import pandas as pd
 import numpy as np
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
+from functools import wraps
 
 app = Flask(__name__)
+
+# secret key untuk session
+app.secret_key = 'capital_analytics_secret_2024'
 
 # folder upload
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -23,6 +27,28 @@ criteria = [
     'Absences',
     'SpecialProjectsCount'
 ]
+
+
+# =====================================================
+# AKUN PENGGUNA (tanpa database)
+# =====================================================
+USERS = {
+    'admin':      {'password': 'admin123',   'name': 'Administrator', 'role': 'Admin'},
+    'hr_manager': {'password': 'hr2024',     'name': 'HR Manager',    'role': 'HR Manager'},
+    'analyst':    {'password': 'analyst123', 'name': 'Data Analyst',  'role': 'Analyst'},
+}
+
+
+# =====================================================
+# DECORATOR LOGIN REQUIRED
+# =====================================================
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # =====================================================
@@ -64,7 +90,19 @@ def calculate_ahp_weights():
     else:
         print("Matrix tidak konsisten")
 
-    return weights
+    ahp_meta = {
+        'lambda_max': round(float(lambda_max), 4),
+        'CI':         round(float(CI), 4),
+        'RI':         1.12,
+        'CR':         round(float(CR), 4),
+        'consistent': bool(CR < 0.1),
+        'weights':    {c: round(float(w), 4) for c, w in zip(
+            ['PerformanceScore','EngagementSurvey','EmpSatisfaction','Absences','SpecialProjectsCount'],
+            weights
+        )},
+    }
+
+    return weights, ahp_meta
 
 
 # =====================================================
@@ -128,7 +166,7 @@ def process_ranking(filepath):
         # =========================
         # AHP WEIGHTS
         # =========================
-        weights = calculate_ahp_weights()
+        weights, ahp_meta = calculate_ahp_weights()
         weights_dict = dict(zip(criteria, weights))
 
         print("Bobot AHP:", weights_dict)
@@ -177,22 +215,63 @@ def process_ranking(filepath):
 
         print(df_rank[['EmpID', 'Employee_Name'] + criteria + ['Score']].head(10))
 
-        return df_rank[
+        rankings = df_rank[
             ['EmpID', 'Employee_Name'] + criteria + ['Score']
         ].head(10).to_dict(orient='records')
 
+        # detail: semua karyawan aktif, nilai normalisasi + score
+        detail = (
+            df_rank[['EmpID', 'Employee_Name'] + criteria + ['Score']]
+            .round(4)
+            .to_dict(orient='records')
+        )
+
+        return rankings, detail, ahp_meta
+
     except Exception as e:
         print("Error:", e)
-        return None
+        return None, None, None
+
+
+# =====================================================
+# ROUTING - LOGIN
+# =====================================================
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'username' in session:
+        return redirect(url_for('index'))
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        if username in USERS and USERS[username]['password'] == password:
+            session['username'] = username
+            session['name']     = USERS[username]['name']
+            session['role']     = USERS[username]['role']
+            return redirect(url_for('index'))
+        error = 'Username atau password salah. Silakan coba lagi.'
+    return render_template('login.html', error=error)
+
+
+# =====================================================
+# ROUTING - LOGOUT
+# =====================================================
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 
 # =====================================================
 # ROUTING FLASK
 # =====================================================
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
 
     rankings = []
+    detail = []
+    ahp_meta = None
     stats = {'total': 0, 'avg': 0, 'top_name': "-"}
 
     if request.method == 'POST':
@@ -204,19 +283,25 @@ def index():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)
 
-            data = process_ranking(filepath)
+            rankings, detail, ahp_meta = process_ranking(filepath)
 
-            if data:
-
-                rankings = data
+            if rankings:
 
                 stats = {
-                    'total': len(data),
-                    'avg': sum(r['Score'] for r in data) / len(data),
-                    'top_name': data[0]['Employee_Name']
+                    'total': len(rankings),
+                    'avg': sum(r['Score'] for r in rankings) / len(rankings),
+                    'top_name': rankings[0]['Employee_Name']
                 }
 
-    return render_template('index.html', rankings=rankings, stats=stats)
+    return render_template(
+        'index.html',
+        rankings=rankings,
+        detail=detail or [],
+        ahp_meta=ahp_meta,
+        stats=stats,
+        user_name=session.get('name'),
+        user_role=session.get('role'),
+    )
 
 
 # =====================================================
