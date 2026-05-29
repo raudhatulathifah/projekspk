@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Capital Analytics | Executive Performance Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --glass-bg: rgba(255,255,255,0.9);
+            --primary-gradient: linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);
+            --gold-gradient: linear-gradient(135deg,#f59e0b 0%,#d97706 100%);
+            --bg-color: #f1f5f9;
+        }
+        body {
+            font-family:'Outfit',sans-serif;
+            background-color:var(--bg-color);
+            background-image:radial-gradient(at 0% 0%,rgba(59,130,246,.1) 0px,transparent 50%),
+                             radial-gradient(at 100% 100%,rgba(139,92,246,.1) 0px,transparent 50%);
+            min-height:100vh;
+        }
+
+        /* ── Navbar ── */
+        .glass-nav{background:rgba(255,255,255,.85);backdrop-filter:blur(15px);border-bottom:1px solid rgba(255,255,255,.5);position:sticky;top:0;z-index:1000;}
+        .brand-text{background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;font-size:1.4rem;letter-spacing:-.5px;}
+        .user-badge{display:flex;align-items:center;gap:10px;}
+        .user-avatar{width:36px;height:36px;border-radius:10px;background:var(--primary-gradient);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85rem;flex-shrink:0;}
+        .user-name{font-weight:700;font-size:.85rem;color:#1e293b;}
+        .user-role{font-size:.7rem;color:#94a3b8;font-weight:500;}
+        .btn-logout{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3;border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;white-space:nowrap;}
+        .btn-logout:hover{background:#ffe4e6;color:#be123c;border-color:#fda4af;}
+        .nav-divider{width:1px;height:24px;background:#e2e8f0;}
+
+        /* ── Cards ── */
+        .glass-card{background:var(--glass-bg);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.6);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.03);transition:all .3s cubic-bezier(.4,0,.2,1);}
+        .glass-card:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,.06);}
+
+        /* ── Upload ── */
+        .file-upload-wrapper{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:6px;display:flex;align-items:center;transition:all .2s;}
+        .file-upload-wrapper:focus-within{border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.1);}
+        .btn-browse{background:#f1f5f9;color:#475569;border:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:.85rem;margin-right:12px;transition:all .2s;cursor:pointer;}
+        .btn-browse:hover{background:#e2e8f0;}
+        .selected-file-name{color:#64748b;font-size:.85rem;flex-grow:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        input[type="file"]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;}
+        .btn-execute{background:var(--primary-gradient);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:600;transition:all .3s;}
+        .btn-execute:hover{opacity:.9;transform:scale(1.02);color:#fff;}
+
+        /* ── Labels ── */
+        .section-label{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:.5rem;display:block;}
+        .score-display{background:#f8fafc;color:#1e293b;padding:4px 10px;border-radius:8px;font-weight:700;font-size:.9rem;border:1px solid #e2e8f0;}
+
+        /* ── Crown ── */
+        .crown-icon{color:#f59e0b;filter:drop-shadow(0 2px 4px rgba(245,158,11,.3));animation:crownFloat 2s ease-in-out infinite;}
+        @keyframes crownFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-3px) rotate(5deg);}}
+        .top-performer-card{border-left:4px solid #f59e0b !important;background:linear-gradient(to right,rgba(245,158,11,.05),transparent);}
+
+        /* ── Animate ── */
+        @keyframes slideInUp{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
+        .animate-core{animation:slideInUp .5s ease forwards;}
+
+        /* ── AHP info badge ── */
+        .ahp-badge{display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:5px 12px;font-size:.78rem;font-weight:600;color:#16a34a;}
+        .ahp-badge.inconsistent{background:#fef2f2;border-color:#fecaca;color:#dc2626;}
+        .ahp-stat{font-size:.78rem;color:#64748b;}
+        .ahp-stat span{font-weight:700;color:#1e293b;}
+
+
+        /* ── AHP Consistency ── */
+        .ahp-section{margin-top:2rem;}
+        .ahp-card{background:var(--glass-bg);border:1px solid rgba(255,255,255,.6);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.03);padding:1.5rem 2rem;}
+        .ahp-title{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem;display:block;}
+        .ahp-matrix-wrap{overflow-x:auto;}
+        .ahp-matrix{border-collapse:separate;border-spacing:4px;font-size:.78rem;}
+        .ahp-matrix th{background:#f1f5f9;color:#64748b;font-weight:700;padding:7px 12px;text-align:center;border-radius:6px;white-space:nowrap;font-size:.7rem;}
+        .ahp-matrix td{background:#fff;color:#1e293b;padding:7px 12px;text-align:center;border-radius:6px;border:1px solid #f1f5f9;font-weight:500;}
+        .ahp-matrix td.diag{background:linear-gradient(135deg,#eff6ff,#f0fdf4);font-weight:700;color:#3b82f6;}
+        .ahp-matrix td.row-label{background:#f8fafc;font-weight:700;color:#475569;text-align:left;}
+        .weight-bar-wrap{display:flex;align-items:center;gap:10px;}
+        .weight-bar{height:8px;border-radius:99px;background:var(--primary-gradient);min-width:4px;transition:width .5s ease;}
+        .weight-val{font-size:.8rem;font-weight:700;color:#1e293b;white-space:nowrap;}
+        .weight-label{font-size:.78rem;color:#475569;white-space:nowrap;}
+        .stat-chip{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;text-align:center;}
+        .stat-chip .val{font-size:1.1rem;font-weight:800;color:#1e293b;}
+        .stat-chip .lbl{font-size:.65rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+        .badge-konsisten{display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:8px 16px;font-size:.82rem;font-weight:700;color:#16a34a;}
+        .badge-tidak{display:inline-flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:8px 16px;font-size:.82rem;font-weight:700;color:#dc2626;}
+
+        /* ── Detail Table ── */
+        .detail-section{margin-top:2.5rem;}
+        .table-wrapper{overflow-x:auto;border-radius:16px;}
+        .detail-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem;}
+        .detail-table thead tr{background:linear-gradient(135deg,#3b82f6,#8b5cf6);}
+        .detail-table thead th{color:#fff;font-weight:700;padding:12px 14px;text-align:center;white-space:nowrap;font-size:.75rem;letter-spacing:.5px;text-transform:uppercase;}
+        .detail-table thead th:first-child{text-align:left;border-radius:12px 0 0 0;}
+        .detail-table thead th:last-child{border-radius:0 12px 0 0;}
+        .detail-table tbody tr{transition:background .15s;}
+        .detail-table tbody tr:hover{background:rgba(59,130,246,.04);}
+        .detail-table tbody td{padding:10px 14px;text-align:center;border-bottom:1px solid #f1f5f9;color:#334155;vertical-align:middle;}
+        .detail-table tbody td:first-child{text-align:left;}
+        .detail-table tbody td:nth-child(2){font-weight:600;color:#1e293b;text-align:left;}
+        .score-pill{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700;font-size:.8rem;display:inline-block;}
+        .score-pill.gold{background:linear-gradient(135deg,#f59e0b,#d97706);}
+        .rank-no{font-weight:700;color:#94a3b8;font-size:.8rem;}
+        .emp-id{font-size:.75rem;color:#94a3b8;font-weight:500;}
+
+        /* scrollbar */
+        .table-wrapper::-webkit-scrollbar{height:5px;}
+        .table-wrapper::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px;}
+        .table-wrapper::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px;}
+
+        /* ── Winner Modal ── */
+        .winner-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeOverlay .35s ease;}
+        @keyframes fadeOverlay{from{opacity:0;}to{opacity:1;}}
+        .winner-modal{background:#fff;border-radius:28px;padding:2.5rem 2rem 2rem;max-width:420px;width:90%;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,.18);animation:popIn .45s cubic-bezier(.34,1.56,.64,1);}
+        @keyframes popIn{from{opacity:0;transform:scale(.7) translateY(30px);}to{opacity:1;transform:scale(1) translateY(0);}}
+        .winner-medal{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;box-shadow:0 8px 24px rgba(245,158,11,.35);animation:medalPulse 2s ease-in-out infinite;}
+        @keyframes medalPulse{0%,100%{box-shadow:0 8px 24px rgba(245,158,11,.35);}50%{box-shadow:0 8px 36px rgba(245,158,11,.6);}}
+        .winner-title-label{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:2px;margin-bottom:.4rem;}
+        .winner-name{font-size:1.6rem;font-weight:800;color:#1e293b;line-height:1.2;margin-bottom:.8rem;}
+        .winner-score-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:12px;padding:6px 18px;font-weight:700;font-size:1rem;margin-bottom:1.5rem;}
+        .winner-confetti{font-size:1.4rem;letter-spacing:6px;margin-bottom:1.2rem;}
+        .btn-close-winner{background:var(--primary-gradient);color:#fff;border:none;border-radius:12px;padding:11px 32px;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;width:100%;}
+        .btn-close-winner:hover{opacity:.9;transform:scale(1.02);}
+
+        /* ── Rerata divider ── */
+        .rerata-divider{border-top:1px solid #f1f5f9;margin-top:.75rem;padding-top:.65rem;}
+        .rerata-label{font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;}
+        .rerata-val{font-size:1.05rem;font-weight:700;color:#64748b;margin-top:2px;}
+    </style>
+</head>
+<body>
+
+<!-- ══════════ NAVBAR ══════════ -->
+<nav class="glass-nav py-3 mb-5">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="brand-text">CAPITAL ANALYTICS</div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="user-badge">
+                <div class="user-avatar">{{ user_name[0]|upper if user_name else 'U' }}</div>
+                <div class="d-none d-sm-block">
+                    <div class="user-name">{{ user_name }}</div>
+                    <div class="user-role">{{ user_role }}</div>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="/logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket me-1"></i>Keluar</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="container mb-5">
+
+    <!-- Header + Upload -->
+    <div class="row mb-5 align-items-center">
+        <div class="col-lg-6">
+            <h1 class="fw-800 display-6 mb-3 text-dark">Matriks Keputusan Performa</h1>
+            <p class="text-secondary opacity-75 fw-400">Transformasi data mentah menjadi keputusan strategis menggunakan metodologi komputasi AHP &amp; SAW.</p>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass-card p-4">
+                <span class="section-label mb-3">Pemuatan Sumber Data</span>
+                <form action="/" method="post" enctype="multipart/form-data">
+                    <div class="d-flex gap-2">
+                        <div class="file-upload-wrapper flex-grow-1">
+                            <label class="btn-browse" for="fileInput">Pilih File</label>
+                            <span class="selected-file-name" id="fileNameDisplay">Belum ada file terpilih...</span>
+                            <input type="file" name="file" id="fileInput" accept=".csv" required onchange="handleFileChange()">
+                        </div>
+                        <button type="submit" class="btn btn-execute">Proses <i class="fa-solid fa-chevron-right ms-2 small"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if rankings %}
+
+    <!-- ── Stats Cards ── -->
+    <div class="row g-4 mb-4 animate-core">
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100 border-start border-4 border-primary">
+                <span class="section-label">Populasi Sampel</span>
+                <h3 class="fw-bold mb-0 text-dark">{{ stats.total }} <span class="fs-6 fw-normal text-muted">Individu</span></h3>
+            </div>
+        </div>
+
+        <!-- ── NILAI TERTINGGI + RERATA POPULASI ── -->
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100 border-start border-4 border-warning">
+                <span class="section-label">Nilai Tertinggi</span>
+                <h3 class="fw-bold mb-0 text-dark">{{ rankings[0].Score|round(4) }}</h3>
+                <div class="rerata-divider">
+                    <div class="rerata-label">Rerata Populasi</div>
+                    <div class="rerata-val">
+                        {% set total_score = namespace(val=0) %}
+                        {% for r in rankings %}
+                            {% set total_score.val = total_score.val + r.Score %}
+                        {% endfor %}
+                        {{ (total_score.val / rankings|length)|round(3) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100 top-performer-card">
+                <div class="d-flex justify-content-between">
+                    <span class="section-label">Pencapaian Tertinggi</span>
+                    <i class="fa-solid fa-crown crown-icon"></i>
+                </div>
+                <h3 class="fw-bold mb-0 text-dark text-truncate">{{ stats.top_name }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── AHP Meta ── -->
+    {% if ahp_meta %}
+    <div class="glass-card p-4 mb-4 animate-core">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div>
+                <span class="section-label mb-1">Validasi Konsistensi AHP</span>
+                <div class="d-flex flex-wrap gap-3 align-items-center mt-1">
+                    <span class="ahp-stat">λ<sub>max</sub>: <span>{{ ahp_meta.lambda_max }}</span></span>
+                    <span class="ahp-stat">CI: <span>{{ ahp_meta.CI }}</span></span>
+                    <span class="ahp-stat">RI: <span>1.12</span></span>
+                    <span class="ahp-stat">CR: <span>{{ ahp_meta.CR }}</span></span>
+                    {% if ahp_meta.consistent %}
+                    <span class="ahp-badge"><i class="fa-solid fa-circle-check"></i> Matrix Konsisten (CR &lt; 0.1)</span>
+                    {% else %}
+                    <span class="ahp-badge inconsistent"><i class="fa-solid fa-triangle-exclamation"></i> Matrix Tidak Konsisten (CR ≥ 0.1)</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Chart + Ranking List ── -->
+    <div class="row g-4 mb-4 animate-core" style="animation-delay:.1s">
+        <div class="col-lg-7">
+            <div class="glass-card p-4 h-100">
+                <h5 class="fw-bold mb-4">Komparasi Visual Performa</h5>
+                <div style="height:380px;"><canvas id="rankingChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="glass-card p-4 h-100">
+                <h5 class="fw-bold mb-4">Urutan Prioritas Performa</h5>
+                <div class="list-group list-group-flush">
+                    {% for r in rankings %}
+                    <div class="list-group-item bg-transparent border-0 px-0 mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <div class="d-flex align-items-center">
+                                <span class="me-3 fw-bold small">
+                                    {% if loop.index == 1 %}<i class="fa-solid fa-crown crown-icon"></i>
+                                    {% else %}0{{ loop.index }}{% endif %}
+                                </span>
+                                <h6 class="mb-0 fw-600 {% if loop.index==1 %}text-primary fw-bold{% else %}text-dark{% endif %}">{{ r.Employee_Name }}</h6>
+                            </div>
+                            <span class="score-display">{{ r.Score|round(4) }}</span>
+                        </div>
+                        <div class="progress" style="height:5px;border-radius:10px;background:#f1f5f9;">
+                            <div class="progress-bar" style="width:{{ r.Score*100 }}%;border-radius:10px;background:{% if loop.index==1 %}var(--gold-gradient){% else %}var(--primary-gradient){% endif %};"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════
+         VALIDASI KONSISTENSI AHP
+    ══════════════════════════════════════════ -->
+    {% if ahp_meta %}
+    <div class="ahp-section animate-core" style="animation-delay:.15s">
+        <div class="ahp-card">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                <div>
+                    <span class="ahp-title">Validasi Konsistensi AHP</span>
+                    <p class="text-muted mb-0" style="font-size:.8rem;">Uji kelayakan matriks perbandingan antar kriteria (Saaty, n=5, RI=1.12)</p>
+                </div>
+                {% if ahp_meta.consistent %}
+                <span class="badge-konsisten"><i class="fa-solid fa-circle-check"></i> Matrix Konsisten &mdash; CR &lt; 0.1</span>
+                {% else %}
+                <span class="badge-tidak"><i class="fa-solid fa-triangle-exclamation"></i> Matrix Tidak Konsisten &mdash; CR &ge; 0.1</span>
+                {% endif %}
+            </div>
+
+            <!-- Stat chips -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="stat-chip">
+                        <div class="val">{{ ahp_meta.lambda_max }}</div>
+                        <div class="lbl">&lambda;<sub>max</sub></div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-chip">
+                        <div class="val">{{ ahp_meta.CI }}</div>
+                        <div class="lbl">Consistency Index (CI)</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-chip">
+                        <div class="val">{{ ahp_meta.RI }}</div>
+                        <div class="lbl">Random Index (RI)</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-chip" style="{% if ahp_meta.consistent %}background:#f0fdf4;border-color:#86efac;{% else %}background:#fef2f2;border-color:#fca5a5;{% endif %}">
+                        <div class="val" style="{% if ahp_meta.consistent %}color:#16a34a;{% else %}color:#dc2626;{% endif %}">{{ ahp_meta.CR }}</div>
+                        <div class="lbl">Consistency Ratio (CR)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Matriks AHP -->
+                <div class="col-lg-7">
+                    <span class="ahp-title">Matriks Perbandingan Berpasangan</span>
+                    <div class="ahp-matrix-wrap">
+                        <table class="ahp-matrix">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Perf.</th>
+                                    <th>Engage.</th>
+                                    <th>Satisf.</th>
+                                    <th>Absent</th>
+                                    <th>Projects</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="row-label">Perf.</td>
+                                    <td class="diag">1</td><td>3</td><td>3</td><td>5</td><td>4</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">Engage.</td>
+                                    <td>1/3</td><td class="diag">1</td><td>2</td><td>4</td><td>3</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">Satisf.</td>
+                                    <td>1/3</td><td>1/2</td><td class="diag">1</td><td>3</td><td>2</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">Absent</td>
+                                    <td>1/5</td><td>1/4</td><td>1/3</td><td class="diag">1</td><td>2</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">Projects</td>
+                                    <td>1/4</td><td>1/3</td><td>1/2</td><td>1/2</td><td class="diag">1</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bobot Kriteria -->
+                <div class="col-lg-5">
+                    <span class="ahp-title">Bobot Kriteria (Priority Vector)</span>
+                    <div class="d-flex flex-column gap-3">
+                        {% set labels = ['Performance Score','Engagement Survey','Emp Satisfaction','Absences','Special Projects'] %}
+                        {% set w_vals = [
+                            ahp_meta.weights.PerformanceScore,
+                            ahp_meta.weights.EngagementSurvey,
+                            ahp_meta.weights.EmpSatisfaction,
+                            ahp_meta.weights.Absences,
+                            ahp_meta.weights.SpecialProjectsCount
+                        ] %}
+                        {% for lbl in labels %}
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="weight-label">{{ lbl }}</span>
+                                <span class="weight-val">{{ w_vals[loop.index0] }}</span>
+                            </div>
+                            <div class="weight-bar-wrap">
+                                <div class="weight-bar" style="width:{{ (w_vals[loop.index0] * 100)|round(1) }}%;max-width:100%;"></div>
+                                <span style="font-size:.7rem;color:#94a3b8;">{{ (w_vals[loop.index0] * 100)|round(1) }}%</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ══════════════════════════════════════════
+         TABEL DETAIL PERHITUNGAN KARYAWAN
+    ══════════════════════════════════════════ -->
+    {% if detail %}
+    <div class="glass-card p-4 animate-core detail-section" style="animation-delay:.2s">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h5 class="fw-bold mb-1">Detail Perhitungan Karyawan</h5>
+                <p class="text-muted mb-0" style="font-size:.8rem;">Nilai normalisasi SAW tiap kriteria per karyawan (seluruh karyawan aktif)</p>
+            </div>
+            <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.75rem;padding:6px 12px;border-radius:8px;font-weight:600;">
+                {{ detail|length }} karyawan
+            </span>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>EmpID</th>
+                        <th>Nama Karyawan</th>
+                        <th>Performance<br>Score</th>
+                        <th>Engagement<br>Survey</th>
+                        <th>Emp<br>Satisfaction</th>
+                        <th>Absences</th>
+                        <th>Special Projects<br>Count</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in detail %}
+                    <tr>
+                        <td class="rank-no">{{ loop.index }}</td>
+                        <td class="emp-id">{{ d.EmpID }}</td>
+                        <td style="font-weight:600;color:#1e293b;white-space:nowrap;">
+                            {% if loop.index == 1 %}<i class="fa-solid fa-crown crown-icon me-1" style="font-size:.75rem;"></i>{% endif %}
+                            {{ d.Employee_Name }}
+                        </td>
+                        <td>{{ d.PerformanceScore }}</td>
+                        <td>{{ d.EngagementSurvey }}</td>
+                        <td>{{ d.EmpSatisfaction }}</td>
+                        <td>{{ d.Absences }}</td>
+                        <td>{{ d.SpecialProjectsCount }}</td>
+                        <td>
+                            <span class="score-pill {% if loop.index==1 %}gold{% endif %}">
+                                {{ d.Score }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="row mt-5">
+        <div class="col-12 text-center py-5 animate-core">
+            <div class="mb-4 text-primary opacity-10"><i class="fa-solid fa-chart-line fa-8x"></i></div>
+            <h4 class="fw-bold text-dark">Data Center Ready</h4>
+            <p class="text-secondary">Silakan muat file .csv yang relevan untuk memulai kalkulasi metrik kinerja.</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div><!-- /container -->
+
+<script>
+function handleFileChange(){
+    const i=document.getElementById('fileInput'),d=document.getElementById('fileNameDisplay');
+    if(i.files.length>0){d.innerText=i.files[0].name;d.style.color='#1e293b';d.style.fontWeight='600';}
+}
+
+{% if rankings %}
+window.addEventListener('load', function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'winner-overlay';
+    overlay.innerHTML = `
+        <div class="winner-modal">
+            <div class="winner-confetti">🎉 🏆 🎉</div>
+            <div class="winner-medal">
+                <i class="fa-solid fa-crown" style="color:#fff;font-size:2rem;"></i>
+            </div>
+            <div class="winner-title-label">Analisis Selesai &mdash; Pemenang</div>
+            <div class="winner-name">{{ rankings[0].Employee_Name }}</div>
+            <div class="winner-score-badge">
+                <i class="fa-solid fa-star"></i>&nbsp; Score: {{ rankings[0].Score|round(4) }}
+            </div>
+            <button class="btn-close-winner" onclick="this.closest('.winner-overlay').remove()">
+                Lihat Hasil Lengkap &nbsp;<i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+});
+
+const ctx=document.getElementById('rankingChart').getContext('2d');
+const gP=ctx.createLinearGradient(0,0,0,400);gP.addColorStop(0,'#3b82f6');gP.addColorStop(1,'#8b5cf6');
+const gG=ctx.createLinearGradient(0,0,0,400);gG.addColorStop(0,'#f59e0b');gG.addColorStop(1,'#d97706');
+new Chart(ctx,{
+    type:'bar',
+    data:{
+        labels:[{% for r in rankings %}"{{ r.Employee_Name }}",{% endfor %}],
+        datasets:[{
+            label:'Skor Agregat',
+            data:[{% for r in rankings %}{{ r.Score }},{% endfor %}],
+            backgroundColor:(c)=>c.dataIndex===0?gG:gP,
+            borderRadius:8,barThickness:24
+        }]
+    },
+    options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+            y:{beginAtZero:true,grid:{color:'#f1f5f9'},border:{display:false}},
+            x:{grid:{display:false}}
+        }
+    }
+});
+{% endif %}
+</script>
+</body>
+</html>
