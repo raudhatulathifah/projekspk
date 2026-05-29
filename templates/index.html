@@ -75,7 +75,7 @@
         .ahp-card{background:var(--glass-bg);border:1px solid rgba(255,255,255,.6);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.03);padding:1.5rem 2rem;}
         .ahp-title{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem;display:block;}
         .ahp-matrix-wrap{overflow-x:auto;}
-        .ahp-matrix{width:100%;border-collapse:separate;border-spacing:4px;font-size:.78rem;}
+        .ahp-matrix{border-collapse:separate;border-spacing:4px;font-size:.78rem;}
         .ahp-matrix th{background:#f1f5f9;color:#64748b;font-weight:700;padding:7px 12px;text-align:center;border-radius:6px;white-space:nowrap;font-size:.7rem;}
         .ahp-matrix td{background:#fff;color:#1e293b;padding:7px 12px;text-align:center;border-radius:6px;border:1px solid #f1f5f9;font-weight:500;}
         .ahp-matrix td.diag{background:linear-gradient(135deg,#eff6ff,#f0fdf4);font-weight:700;color:#3b82f6;}
@@ -112,10 +112,30 @@
         .table-wrapper::-webkit-scrollbar{height:5px;}
         .table-wrapper::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px;}
         .table-wrapper::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px;}
+
+        /* ── Winner Modal ── */
+        .winner-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeOverlay .35s ease;}
+        @keyframes fadeOverlay{from{opacity:0;}to{opacity:1;}}
+        .winner-modal{background:#fff;border-radius:28px;padding:2.5rem 2rem 2rem;max-width:420px;width:90%;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,.18);animation:popIn .45s cubic-bezier(.34,1.56,.64,1);}
+        @keyframes popIn{from{opacity:0;transform:scale(.7) translateY(30px);}to{opacity:1;transform:scale(1) translateY(0);}}
+        .winner-medal{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;box-shadow:0 8px 24px rgba(245,158,11,.35);animation:medalPulse 2s ease-in-out infinite;}
+        @keyframes medalPulse{0%,100%{box-shadow:0 8px 24px rgba(245,158,11,.35);}50%{box-shadow:0 8px 36px rgba(245,158,11,.6);}}
+        .winner-title-label{font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:2px;margin-bottom:.4rem;}
+        .winner-name{font-size:1.6rem;font-weight:800;color:#1e293b;line-height:1.2;margin-bottom:.8rem;}
+        .winner-score-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:12px;padding:6px 18px;font-weight:700;font-size:1rem;margin-bottom:1.5rem;}
+        .winner-confetti{font-size:1.4rem;letter-spacing:6px;margin-bottom:1.2rem;}
+        .btn-close-winner{background:var(--primary-gradient);color:#fff;border:none;border-radius:12px;padding:11px 32px;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .2s;width:100%;}
+        .btn-close-winner:hover{opacity:.9;transform:scale(1.02);}
+
+        /* ── Rerata divider ── */
+        .rerata-divider{border-top:1px solid #f1f5f9;margin-top:.75rem;padding-top:.65rem;}
+        .rerata-label{font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;}
+        .rerata-val{font-size:1.05rem;font-weight:700;color:#64748b;margin-top:2px;}
     </style>
 </head>
 <body>
 
+<!-- ══════════ NAVBAR ══════════ -->
 <nav class="glass-nav py-3 mb-5">
     <div class="container d-flex justify-content-between align-items-center">
         <div class="brand-text">CAPITAL ANALYTICS</div>
@@ -133,8 +153,10 @@
     </div>
 </nav>
 
+<!-- ══════════ MAIN ══════════ -->
 <div class="container mb-5">
 
+    <!-- Header + Upload -->
     <div class="row mb-5 align-items-center">
         <div class="col-lg-6">
             <h1 class="fw-800 display-6 mb-3 text-dark">Matriks Keputusan Performa</h1>
@@ -159,6 +181,7 @@
 
     {% if rankings %}
 
+    <!-- ── Stats Cards ── -->
     <div class="row g-4 mb-4 animate-core">
         <div class="col-md-4">
             <div class="glass-card p-4 h-100 border-start border-4 border-primary">
@@ -166,17 +189,25 @@
                 <h3 class="fw-bold mb-0 text-dark">{{ stats.total }} <span class="fs-6 fw-normal text-muted">Individu</span></h3>
             </div>
         </div>
+
+        <!-- ── NILAI TERTINGGI + RERATA POPULASI ── -->
         <div class="col-md-4">
-            <div class="glass-card p-4 h-100 border-start border-4 border-primary d-flex flex-column justify-content-between">
-                <div>
-                    <span class="section-label">Nilai Tertinggi</span>
-                    <h3 class="fw-bold mb-0 text-dark">{{ stats.top_score|round(3) if stats.top_score else rankings[0].Score|round(3) }}</h3>
-                </div>
-                <div class="mt-2 pt-1 border-top border-light">
-                    <span class="text-muted" style="font-size: 0.75rem; font-weight: 500;">Rerata Populasi: <strong class="text-dark">{{ stats.avg|round(3) }}</strong></span>
+            <div class="glass-card p-4 h-100 border-start border-4 border-warning">
+                <span class="section-label">Nilai Tertinggi</span>
+                <h3 class="fw-bold mb-0 text-dark">{{ rankings[0].Score|round(4) }}</h3>
+                <div class="rerata-divider">
+                    <div class="rerata-label">Rerata Populasi</div>
+                    <div class="rerata-val">
+                        {% set total_score = namespace(val=0) %}
+                        {% for r in rankings %}
+                            {% set total_score.val = total_score.val + r.Score %}
+                        {% endfor %}
+                        {{ (total_score.val / rankings|length)|round(3) }}
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="glass-card p-4 h-100 top-performer-card">
                 <div class="d-flex justify-content-between">
@@ -188,6 +219,7 @@
         </div>
     </div>
 
+    <!-- ── AHP Meta ── -->
     {% if ahp_meta %}
     <div class="glass-card p-4 mb-4 animate-core">
         <div class="d-flex flex-wrap align-items-center gap-3">
@@ -209,6 +241,7 @@
     </div>
     {% endif %}
 
+    <!-- ── Chart + Ranking List ── -->
     <div class="row g-4 mb-4 animate-core" style="animation-delay:.1s">
         <div class="col-lg-7">
             <div class="glass-card p-4 h-100">
@@ -243,6 +276,9 @@
     </div>
 
 
+    <!-- ══════════════════════════════════════════
+         VALIDASI KONSISTENSI AHP
+    ══════════════════════════════════════════ -->
     {% if ahp_meta %}
     <div class="ahp-section animate-core" style="animation-delay:.15s">
         <div class="ahp-card">
@@ -259,6 +295,7 @@
                 {% endif %}
             </div>
 
+            <!-- Stat chips -->
             <div class="row g-3 mb-4">
                 <div class="col-6 col-md-3">
                     <div class="stat-chip">
@@ -287,6 +324,7 @@
             </div>
 
             <div class="row g-4">
+                <!-- Matriks AHP -->
                 <div class="col-lg-7">
                     <span class="ahp-title">Matriks Perbandingan Berpasangan</span>
                     <div class="ahp-matrix-wrap">
@@ -327,6 +365,7 @@
                     </div>
                 </div>
 
+                <!-- Bobot Kriteria -->
                 <div class="col-lg-5">
                     <span class="ahp-title">Bobot Kriteria (Priority Vector)</span>
                     <div class="d-flex flex-column gap-3">
@@ -358,6 +397,9 @@
     </div>
     {% endif %}
 
+    <!-- ══════════════════════════════════════════
+         TABEL DETAIL PERHITUNGAN KARYAWAN
+    ══════════════════════════════════════════ -->
     {% if detail %}
     <div class="glass-card p-4 animate-core detail-section" style="animation-delay:.2s">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -413,6 +455,7 @@
     {% endif %}
 
     {% else %}
+    <!-- Empty state -->
     <div class="row mt-5">
         <div class="col-12 text-center py-5 animate-core">
             <div class="mb-4 text-primary opacity-10"><i class="fa-solid fa-chart-line fa-8x"></i></div>
@@ -422,13 +465,38 @@
     </div>
     {% endif %}
 
-</div><script>
+</div><!-- /container -->
+
+<script>
 function handleFileChange(){
     const i=document.getElementById('fileInput'),d=document.getElementById('fileNameDisplay');
     if(i.files.length>0){d.innerText=i.files[0].name;d.style.color='#1e293b';d.style.fontWeight='600';}
 }
 
 {% if rankings %}
+window.addEventListener('load', function() {
+    const overlay = document.createElement('div');
+    overlay.className = 'winner-overlay';
+    overlay.innerHTML = `
+        <div class="winner-modal">
+            <div class="winner-confetti">🎉 🏆 🎉</div>
+            <div class="winner-medal">
+                <i class="fa-solid fa-crown" style="color:#fff;font-size:2rem;"></i>
+            </div>
+            <div class="winner-title-label">Analisis Selesai &mdash; Pemenang</div>
+            <div class="winner-name">{{ rankings[0].Employee_Name }}</div>
+            <div class="winner-score-badge">
+                <i class="fa-solid fa-star"></i>&nbsp; Score: {{ rankings[0].Score|round(4) }}
+            </div>
+            <button class="btn-close-winner" onclick="this.closest('.winner-overlay').remove()">
+                Lihat Hasil Lengkap &nbsp;<i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+});
+
 const ctx=document.getElementById('rankingChart').getContext('2d');
 const gP=ctx.createLinearGradient(0,0,0,400);gP.addColorStop(0,'#3b82f6');gP.addColorStop(1,'#8b5cf6');
 const gG=ctx.createLinearGradient(0,0,0,400);gG.addColorStop(0,'#f59e0b');gG.addColorStop(1,'#d97706');
